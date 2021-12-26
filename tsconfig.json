@@ -1,0 +1,27 @@
+{
+    "compilerOptions": {
+        "allowSyntheticDefaultImports": true,
+        "esModuleInterop": true,
+        "moduleResolution": "node",
+        "module": "CommonJS",
+        "target": "ES2019",
+        "rootDir": "src",
+        "outDir": "dist",
+        "noFallthroughCasesInSwitch": true,
+        "noImplicitAny": true,
+        "noImplicitReturns": true,
+        "noImplicitThis": true,
+        "pretty": true,
+        "alwaysStrict": true,
+        "strictNullChecks": true,
+        "declaration": false,
+        "newLine": "LF",
+        "resolveJsonModule": true,
+        "exactOptionalPropertyTypes": true
+    },
+    "include": [
+        "src/**/*.json",
+        "src/**/*.ts",
+        "src/index.ts"
+    ]
+}
