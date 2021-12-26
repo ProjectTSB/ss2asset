@@ -4,11 +4,15 @@ import jschardet from 'jschardet';
 import iconv from 'iconv-lite';
 import path from 'path';
 
+export function mod(n: number, m: number): number {
+    return (n % m + m) % m;
+}
+
 export function toRadians(degree: number): number {
     return degree * (Math.PI / 180);
 }
 
-export function toSneakCase(str: string): string {
+export function toSnakeCase(str: string): string {
     const preRes = str.replace(/[A-Z]+/g, v => `_${v.toLowerCase()}`);
     if (preRes.indexOf('_') === 0) return preRes.slice(1);
     return preRes;
