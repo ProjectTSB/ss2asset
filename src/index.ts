@@ -41,6 +41,7 @@ async function genIslandRegistry() {
                     { type: 'within', target: { function: [`asset:island/${id}/register/`] } },
                     ['島の定義データ']
                 ),
+                '',
                 '# ID (int)',
                 `    data modify storage asset:island ID set value ${id}`,
                 '# Rotation (float) (Optional)',
@@ -56,15 +57,13 @@ async function genIslandRegistry() {
         });
 }
 
-interface SpawnPotential {
-    id: number
-    weight?: number
-}
+// eslint-disable-next-line @typescript-eslint/naming-convention
+type SpawnPotentials = number| { Id: number, Weight?: number }[] | number[];
 
 interface SpawnerData {
     id: number
     hp: number
-    spawnPotentials: SpawnPotential[]
+    spawnPotentials: SpawnPotentials
     spawnCount: number
     spawnRange: number
     delay: number
@@ -75,22 +74,73 @@ interface SpawnerData {
 }
 
 async function genSpawnerRegistry() {
-    const mkSpawnerData = (data: List<string, 26>): SpawnerData => ({
+    const mkSpawnPotentials = (data: List<string, 27>): SpawnPotentials => {
+        const h = [[data[7], data[9]], [data[10], data[12]], [data[13], data[15]], [data[16], data[18]]].filter(v => v[0] !== '');
+        return (h.every(v => v[1] === ''))
+            ? h.map(v => parseInt(v[0]))
+            // eslint-disable-next-line @typescript-eslint/naming-convention
+            : h.map(v => ({ Id: parseInt(v[0]), Weight: parseInt(v[1] || '1') }));
+    };
+    const mkSpawnerData = (data: List<string, 27>): SpawnerData => ({
         id: parseInt(data[0]),
-        hp: parseInt(data[18]),
-        spawnPotentials: [],
-        spawnCount: parseInt(data[19]),
-        spawnRange: parseInt(data[20]),
-        delay: parseInt(data[21]),
-        minSpawnDelay: parseInt(data[22]),
-        maxSpawnDelay: parseInt(data[23]),
-        maxNearbyEntities: parseInt(data[24]),
-        requiredPlayerRange: parseInt(data[25])
+        hp: parseInt(data[19]),
+        spawnPotentials: mkSpawnPotentials(data),
+        spawnCount: parseInt(data[20]),
+        spawnRange: parseInt(data[21]),
+        delay: parseInt(data[22]),
+        minSpawnDelay: parseInt(data[23]),
+        maxSpawnDelay: parseInt(data[24]),
+        maxNearbyEntities: parseInt(data[25]),
+        requiredPlayerRange: parseInt(data[26])
     });
-    (csvParse(await readFile(getInputPath('spawner.csv'))) as List<string, 26>[])
+    (csvParse(await readFile(getInputPath('spawner.csv'))) as List<string, 27>[])
         .slice(1)
-        .map(v => [parseInt(v[1], 10), v[3].split(' ').map(s => parseInt(s, 10)), mkSpawnerData(v)] as [number, Pos, SpawnerData])
-        .map(v => v)
+        .filter(v => v[4] !== '')
+        .map(v => [parseInt(v[0], 10), v[4].split(' ').map(s => parseInt(s, 10)), mkSpawnerData(v)] as [number, Pos, SpawnerData])
+        .forEach(([id, pos, data]) => {
+            const idStr = `00${id}`.slice(-3);
+            const contentA: string[] = [
+                makeIMPDoc(
+                    `asset:spawner/${idStr}/`,
+                    { type: 'within', target: { 'tag/function': ['asset:spawner/register'] } },
+                    ['スポナーの呪われた神器の位置を書く']
+                ),
+                `execute positioned ${pos.join(' ')} unless entity @e[type=armor_stand,tag=Spawner,distance=..0.001] run function asset:spawner/${idStr}/register`
+            ];
+            writeFile(getOutputPath(`spawner/${idStr}/.mcfunction`), contentA.join('\n'));
+
+            const contentB: string[] = [
+                makeIMPDoc(
+                    `asset:spawner/${idStr}/register`,
+                    { type: 'within', target: { function: [`asset:spawner/${idStr}/`] } },
+                    ['スポナーの定義データ']
+                ),
+                '',
+                '# ID (int)',
+                `    data modify storage asset:spawner ID set value ${id}`,
+                '# 体力 (int) このスポナーから召喚されたMobがN体殺されると破壊されるか',
+                `    data modify storage asset:spawner HP set value ${data.hp}`,
+                '# SpawnPotentials(int | int[] | ({ Weight: int, Id: int })[]) MobAssetのIDを指定する',
+                `    data modify storage asset:spawner SpawnPotentials set value ${JSON.stringify(data.spawnPotentials).replace(/"/g, '')}`,
+                '# 一度に召喚する数 (int)',
+                `    data modify storage asset:spawner SpawnCount set value ${data.spawnCount}`,
+                '# 動作範囲 (int) この範囲にプレイヤーが存在するとき、Mobの召喚を開始する',
+                `    data modify storage asset:spawner SpawnRange set value ${data.spawnRange}`,
+                '# 初回召喚時間 (int)',
+                `    data modify storage asset:spawner Delay set value ${data.delay}`,
+                '# 最低召喚間隔 (int)',
+                `    data modify storage asset:spawner MinSpawnDelay set value ${data.minSpawnDelay}`,
+                '# 最大召喚間隔 (int)',
+                `    data modify storage asset:spawner MaxSpawnDelay set value ${data.maxSpawnDelay}`,
+                '# 近くのエンティティの最大数 (int)',
+                `    data modify storage asset:spawner MaxNearbyEntities set value ${data.maxNearbyEntities}`,
+                '# この範囲にプレイヤーが存在するとき、Mobの召喚を開始する // distance <= 100',
+                `    data modify storage asset:spawner RequiredPlayerRange set value ${data.requiredPlayerRange}`,
+                '',
+                'function asset:spawner/common/register'
+            ];
+            writeFile(getOutputPath(`spawner/${idStr}/register.mcfunction`), contentB.join('\n'));
+        });
 }
 
 async function run() {
