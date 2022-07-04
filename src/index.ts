@@ -7,20 +7,33 @@ import { readFile, toSnakeCase, writeFile } from './utils';
 const getInputPath = (file: string) => path.join(process.cwd(), 'input', file);
 const getOutputPath = (file: string) => path.join(process.cwd(), 'output', file);
 
+function parseCsv<T>(text: string): T {
+    return csvParse(text) as T;
+}
+
+function mkRegisterCommand(storage: string, indent = 4): (
+    (mes: string, path: string, value: { toString(): string } | undefined, commentOut?: boolean) => string
+) {
+    return (m, p, v, co = false) => [
+        `# ${m}`,
+        `${' '.repeat(indent)}${co ? '# ' : ''}data modify storage ${storage} ${p} set value ${v !== undefined ? v : ''}`
+    ].join('\n');
+}
+
 async function genIslandRegistry() {
-    const mobMap = csvParse(await readFile(getInputPath('mob.csv'))) as [id: number, name: string][];
-    (csvParse(await readFile(getInputPath('island.csv'))) as [string?, string?, string?, string?, string?][])
+    const register = mkRegisterCommand('asset:island', 4);
+
+    const mobMap = parseCsv<[number, string][]>(await readFile(getInputPath('mob.csv')));
+
+    parseCsv<List<string | undefined, 5>[]>(await readFile(getInputPath('island.csv')))
         .filter(v => v[0] && v[1] && v[2] && v[3])
-        .map(v => v as [string, string, string, string, string?])
+        .map(v => v.map(v2 => v2?.trim()) as [...List<string, 4>, string?])
         .filter(v => /[0-9]+/.test(v[0]))
         .filter(v => /^[-+]?[0-9]*\.?[0-9]+ [-+]?[0-9]*\.?[0-9]+ [-+]?[0-9]*\.?[0-9]+$/.test(v[2]))
         .map(([id, dim, pos, rot, bossName]) => [
-            id.trim(),
-            dim.trim(),
-            pos.trim(),
-            rot.trim(),
+            id, dim, pos, rot,
             bossName ? mobMap.find(v => v[1] === bossName)?.[0] : undefined
-        ] as [string, string, string, string, number?])
+        ] as [...List<string, 4>, number?])
         .forEach(([id, dim, pos, rot, bossId]) => {
             const idStr = `0${id}`.slice(-2);
             const contentA: string[] = [
@@ -40,14 +53,9 @@ async function genIslandRegistry() {
                     ['島の定義データ']
                 ),
                 '',
-                '# ID (int)',
-                `    data modify storage asset:island ID set value ${id}`,
-                '# Rotation (float)',
-                `    data modify storage asset:island Rotation set value ${rot}f`,
-                '# BOSS ID (int) (Optional)',
-                bossId
-                    ? `    data modify storage asset:island BossID set value ${bossId}`
-                    : '    # data modify storage asset:island BossID set value ',
+                register('ID (int)', 'ID', id),
+                register('Rotation (float)', 'Rotation', `${rot}f`),
+                register('BOSS ID (int) (Optional)', 'BossID', bossId, !!bossId),
                 '',
                 'function asset:island/common/register'
             ];
@@ -55,23 +63,23 @@ async function genIslandRegistry() {
         });
 }
 
-// eslint-disable-next-line @typescript-eslint/naming-convention
-type SpawnPotentials = number| { Id: number, Weight?: number }[] | number[];
-
-interface SpawnerData {
-    id: number
-    hp: number
-    spawnPotentials: SpawnPotentials
-    spawnCount: number
-    spawnRange: number
-    delay: number
-    minSpawnDelay: number
-    maxSpawnDelay: number
-    maxNearbyEntities: number
-    requiredPlayerRange: number
-}
-
 async function genSpawnerRegistry() {
+    // eslint-disable-next-line @typescript-eslint/naming-convention
+    type SpawnPotentials = number | { Id: number, Weight?: number }[] | number[];
+
+    interface SpawnerData {
+        id: number
+        hp: number
+        spawnPotentials: SpawnPotentials
+        spawnCount: number
+        spawnRange: number
+        delay: number
+        minSpawnDelay: number
+        maxSpawnDelay: number
+        maxNearbyEntities: number
+        requiredPlayerRange: number
+    }
+
     const mkSpawnPotentials = (data: List<string, 28>): SpawnPotentials => {
         const h = [[data[8], data[10]], [data[11], data[13]], [data[14], data[16]], [data[17], data[19]]].filter(v => v[0] !== '');
         return (h.every(v => v[1] === ''))
@@ -80,18 +88,21 @@ async function genSpawnerRegistry() {
             : h.map(v => ({ Id: parseInt(v[0]), Weight: parseInt(v[1] || '1') }));
     };
     const mkSpawnerData = (data: List<string, 28>): SpawnerData => ({
-        id: parseInt(data[0]),
-        hp: parseInt(data[20]),
+        id: parseInt(data[0], 10),
+        hp: parseInt(data[20], 10),
         spawnPotentials: mkSpawnPotentials(data),
-        spawnCount: parseInt(data[21]),
-        spawnRange: parseInt(data[22]),
-        delay: parseInt(data[23]),
-        minSpawnDelay: parseInt(data[24]),
-        maxSpawnDelay: parseInt(data[25]),
-        maxNearbyEntities: parseInt(data[26]),
-        requiredPlayerRange: parseInt(data[27])
+        spawnCount: parseInt(data[21], 10),
+        spawnRange: parseInt(data[22], 10),
+        delay: parseInt(data[23], 10),
+        minSpawnDelay: parseInt(data[24], 10),
+        maxSpawnDelay: parseInt(data[25], 10),
+        maxNearbyEntities: parseInt(data[26], 10),
+        requiredPlayerRange: parseInt(data[27], 10)
     });
-    (csvParse(await readFile(getInputPath('spawner.csv'))) as List<string, 28>[])
+
+    const register = mkRegisterCommand('asset:spawner', 4);
+
+    parseCsv<List<string, 28>[]>(await readFile(getInputPath('spawner.csv')))
         .slice(1)
         .filter(v => v[5] !== '')
         .map(v => [parseInt(v[0], 10), v[4].trim(), v[5].trim(), mkSpawnerData(v)] as [number, string, string, SpawnerData])
@@ -114,26 +125,19 @@ async function genSpawnerRegistry() {
                     ['スポナーの定義データ']
                 ),
                 '',
-                '# ID (int)',
-                `    data modify storage asset:spawner ID set value ${id}`,
-                '# 体力 (int) このスポナーから召喚されたMobがN体殺されると破壊されるか',
-                `    data modify storage asset:spawner HP set value ${data.hp}`,
-                '# SpawnPotentials(int | int[] | ({ Weight: int, Id: int })[]) MobAssetのIDを指定する',
-                `    data modify storage asset:spawner SpawnPotentials set value ${JSON.stringify(data.spawnPotentials).replace(/"/g, '')}`,
-                '# 一度に召喚する数 (int)',
-                `    data modify storage asset:spawner SpawnCount set value ${data.spawnCount}`,
-                '# 動作範囲 (int) この範囲にプレイヤーが存在するとき、Mobの召喚を開始する',
-                `    data modify storage asset:spawner SpawnRange set value ${data.spawnRange}`,
-                '# 初回召喚時間 (int)',
-                `    data modify storage asset:spawner Delay set value ${data.delay}`,
-                '# 最低召喚間隔 (int)',
-                `    data modify storage asset:spawner MinSpawnDelay set value ${data.minSpawnDelay}`,
-                '# 最大召喚間隔 (int)',
-                `    data modify storage asset:spawner MaxSpawnDelay set value ${data.maxSpawnDelay}`,
-                '# 近くのエンティティの最大数 (int)',
-                `    data modify storage asset:spawner MaxNearbyEntities set value ${data.maxNearbyEntities}`,
-                '# この範囲にプレイヤーが存在するとき、Mobの召喚を開始する // distance <= 100',
-                `    data modify storage asset:spawner RequiredPlayerRange set value ${data.requiredPlayerRange}`,
+                register('ID (int)', 'ID', id),
+                register('体力 (int) このスポナーから召喚されたMobがN体殺されると破壊されるか', 'HP', data.hp),
+                register('SpawnPotentials(int | int[] | ({ Weight: int, Id: int })[]) MobAssetのIDを指定する',
+                    'SpawnPotentials', JSON.stringify(data.spawnPotentials).replace(/"/g, '')),
+                register('一度に召喚する数 (int)', 'SpawnCount', data.spawnCount),
+                register('動作範囲 (int) この範囲にプレイヤーが存在するとき、Mobの召喚を開始する',
+                    'SpawnRange', data.spawnRange),
+                register('初回召喚時間 (int)', 'Delay', data.delay),
+                register('最低召喚間隔 (int)', 'MinSpawnDelay', data.minSpawnDelay),
+                register('最大召喚間隔 (int)', 'MaxSpawnDelay', data.maxSpawnDelay),
+                register('近くのエンティティの最大数 (int)', 'MaxNearbyEntities', data.maxNearbyEntities),
+                register('この範囲にプレイヤーが存在するとき、Mobの召喚を開始する // distance <= 100',
+                    'RequiredPlayerRange', data.requiredPlayerRange),
                 '',
                 'function asset:spawner/common/register'
             ];
@@ -142,7 +146,7 @@ async function genSpawnerRegistry() {
 }
 
 async function run() {
-    await genIslandRegistry();
+    // await genIslandRegistry();
     // await genSpawnerRegistry();
 }
 
