@@ -8,13 +8,13 @@ export class Vector2D extends AbstractVector<Vector2D, Axis> {
         super();
     }
 
-    distance(p: Vector2D): number {
+    override distance(p: Vector2D): number {
         return Math.sqrt((this.x - p.x) ** 2 + (this.y - p.y) ** 2);
     }
 
-    calc<B extends Vector2DLike>(b: B, f: (a: number, b: B[Axis]) => number): Vector2D;
-    calc<B extends Vector2DLike, C extends Vector2DLike>(b: B, c: C, f: (a: number, b: B[Axis], c: C[Axis]) => number): Vector2D;
-    calc<B extends Vector2DLike, C extends Vector2DLike>(b: B, c: C | ((a: number, b: B[Axis]) => number), f?: (a: number, b: B[Axis], c: C[Axis]) => number): Vector2D {
+    override calc<B extends Vector2DLike>(b: B, f: (a: number, b: B[Axis]) => number): Vector2D;
+    override calc<B extends Vector2DLike, C extends Vector2DLike>(b: B, c: C, f: (a: number, b: B[Axis], c: C[Axis]) => number): Vector2D;
+    override calc<B extends Vector2DLike, C extends Vector2DLike>(b: B, c: C | ((a: number, b: B[Axis]) => number), f?: (a: number, b: B[Axis], c: C[Axis]) => number): Vector2D {
         if (typeof c === 'function')
             return new Vector2D(c(this.x, b.x), c(this.y, b.y));
         if (typeof f === 'function')
@@ -30,11 +30,11 @@ export class Vector2D extends AbstractVector<Vector2D, Axis> {
         return new Vector2D(this.x, y);
     }
 
-    map(f: (element: number) => number): Vector2D {
+    override map(f: (element: number) => number): Vector2D {
         return new Vector2D(f(this.x), f(this.y));
     }
 
-    update(fx: ((x: number, y: number) => number), fy: ((x: number, y: number) => number)): Vector2D {
+    override update(fx: ((x: number, y: number) => number), fy: ((x: number, y: number) => number)): Vector2D {
         return new Vector2D(fx(this.x, this.y), fy(this.x, this.y));
     }
 
@@ -46,11 +46,11 @@ export class Vector2D extends AbstractVector<Vector2D, Axis> {
         return new Vector2D(this.x, f(this.y));
     }
 
-    clone(): Vector2D {
+    override clone(): Vector2D {
         return new Vector2D(this.x, this.y);
     }
 
-    toString(): string {
+    override toString(): string {
         return `${this.x}, ${this.y}`;
     }
 

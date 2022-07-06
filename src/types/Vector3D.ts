@@ -8,13 +8,13 @@ export class Vector3D extends AbstractVector<Vector3D, Axis> {
         super();
     }
 
-    distance(p: Vector3D): number {
+    override distance(p: Vector3D): number {
         return Math.sqrt((this.x - p.x) ** 2 + (this.y - p.y) ** 2 + (this.z - p.z) ** 2);
     }
 
-    calc<B extends Vector3DLike>(b: B, f: (a: number, b: B[Axis]) => number): Vector3D;
-    calc<B extends Vector3DLike, C extends Vector3DLike>(b: B, c: C, f: (a: number, b: B[Axis], c: C[Axis]) => number): Vector3D;
-    calc<B extends Vector3DLike, C extends Vector3DLike>(b: B, c: C | ((a: number, b: B[Axis]) => number), f?: (a: number, b: B[Axis], c: C[Axis]) => number): Vector3D {
+    override calc<B extends Vector3DLike>(b: B, f: (a: number, b: B[Axis]) => number): Vector3D;
+    override calc<B extends Vector3DLike, C extends Vector3DLike>(b: B, c: C, f: (a: number, b: B[Axis], c: C[Axis]) => number): Vector3D;
+    override calc<B extends Vector3DLike, C extends Vector3DLike>(b: B, c: C | ((a: number, b: B[Axis]) => number), f?: (a: number, b: B[Axis], c: C[Axis]) => number): Vector3D {
         if (typeof c === 'function')
             return new Vector3D(c(this.x, b.x), c(this.y, b.y), c(this.z, b.z));
         if (typeof f === 'function')
@@ -34,11 +34,11 @@ export class Vector3D extends AbstractVector<Vector3D, Axis> {
         return new Vector3D(this.x, this.y, z);
     }
 
-    map(f: (element: number) => number): Vector3D {
+    override map(f: (element: number) => number): Vector3D {
         return new Vector3D(f(this.x), f(this.y), f(this.z));
     }
 
-    update(
+    override update(
         fx: (x: number, y: number, z: number) => number,
         fy: (x: number, y: number, z: number) => number,
         fz: (x: number, y: number, z: number) => number
@@ -58,11 +58,11 @@ export class Vector3D extends AbstractVector<Vector3D, Axis> {
         return new Vector3D(this.x, this.y, f(this.z));
     }
 
-    clone(): Vector3D {
+    override clone(): Vector3D {
         return new Vector3D(this.x, this.y, this.z);
     }
 
-    toString(): string {
+    override toString(): string {
         return `${this.x}, ${this.y}, ${this.z}`;
     }
 
