@@ -23,17 +23,11 @@ function mkRegisterCommand(storage: string, indent = 4): (
 async function genIslandRegistry() {
     const register = mkRegisterCommand('asset:island', 4);
 
-    const mobMap = parseCsv<List<string, 2>[]>(await readFile(getInputPath('mob.csv')));
-
     parseCsv<List<string | undefined, 5>[]>(await readFile(getInputPath('island.csv')))
         .filter(v => v[0] && v[1] && v[2] && v[3])
         .map(v => v.map(v2 => v2?.trim()) as [...List<string, 4>, string?])
         .filter(v => /[0-9]+/.test(v[0]))
         .filter(v => /^[-+]?[0-9]*\.?[0-9]+ [-+]?[0-9]*\.?[0-9]+ [-+]?[0-9]*\.?[0-9]+$/.test(v[2]))
-        .map(([id, dim, pos, rot, bossName]) => [
-            id, dim, pos, rot,
-            bossName ? mobMap.find(v => v[1] === bossName)?.[0] : undefined
-        ] as [...List<string, 4>, string?])
         .forEach(([id, dim, pos, rot, bossId]) => {
             const idStr = `0${id}`.slice(-2);
             const contentA: string[] = [
