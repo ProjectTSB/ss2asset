@@ -51,7 +51,7 @@ export class Vector2D extends AbstractVector<Vector2D, Axis> {
     }
 
     override toString(): string {
-        return `${this.x}, ${this.y}`;
+        return `${this.x} ${this.y}`;
     }
 
     // eslint-disable-next-line @typescript-eslint/naming-convention

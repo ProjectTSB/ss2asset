@@ -63,7 +63,7 @@ export class Vector3D extends AbstractVector<Vector3D, Axis> {
     }
 
     override toString(): string {
-        return `${this.x}, ${this.y}, ${this.z}`;
+        return `${this.x} ${this.y} ${this.z}`;
     }
 
     // eslint-disable-next-line @typescript-eslint/naming-convention
