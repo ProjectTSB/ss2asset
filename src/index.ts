@@ -149,6 +149,94 @@ async function genSpawnerRegistry() {
         });
 }
 
+async function genTeleporterRegistry() {
+    const register = mkRegisterCommand('asset:teleporter', 4);
+
+    type SpreadsheetColumns = [id: string, group: string, where: string, dimension: string, x: string, y: string, z: string, activationKind: string, color: string];
+    interface TeleporterData {
+        id: number,
+        group: string,
+        dimension: string,
+        pos: Vector3D,
+        activationKind: 'InvisibleDeactivate' | 'VisibleDeactivate' | 'Activate',
+        color: 'white' | 'aqua' | undefined
+    }
+
+    const activationMap = {
+        '起動': 'Activate',
+        '非起動-可視': 'VisibleDeactivate',
+        '非起動-非可視': 'InvisibleDeactivate'
+    } as const;
+
+    const colorMap = {
+        '白': 'white',
+        '水色': 'aqua'
+    } as const;
+
+    parseCsv<SpreadsheetColumns[]>(await readFile(getInputPath('teleporter.csv')))
+        .slice(1)
+        .filter((data, i) => {
+            const isInvalidNumStr = (str: string) => isNaN(parseInt(str));
+            if (isInvalidNumStr(data[0])) {
+                console.log(`column ${i + 1} / invalid id.`);
+                return false;
+            }
+            if (data[1] === '') {
+                console.log(`id: ${data[0]} / invalid group.`);
+                return false;
+            }
+            if (data[3] === '') {
+                console.log(`id: ${data[0]} / invalid group.`);
+                return false;
+            }
+            if (isInvalidNumStr(data[4]) || isInvalidNumStr(data[5]) || isInvalidNumStr(data[6])) {
+                console.log(`id: ${data[0]} / invalid pos.`);
+                return false;
+            }
+            if (activationMap[data[7] as keyof typeof activationMap] === undefined) {
+                console.log(`id: ${data[0]} / invalid activation kind.`);
+                return false;
+            }
+            if (colorMap !== undefined && colorMap[data[8] as keyof typeof colorMap] === undefined) {
+                console.log(`id: ${data[0]} / invalid color.`);
+                return false;
+            }
+            return true;
+        })
+        .map<TeleporterData>(data => ({
+            id: parseInt(data[0], 10),
+            group: data[1],
+            dimension: data[3],
+            pos: new Vector3D(parseInt(data[4], 10), parseInt(data[5], 10), parseInt(data[6], 10)),
+            activationKind: activationMap[data[7] as keyof typeof activationMap]!,
+            color: colorMap[data[8] as keyof typeof colorMap]
+        }))
+        .forEach(({ id, group, dimension: dim, pos, activationKind, color }) => {
+            const idStr = `0${id}`.slice(-2);
+            const contentA: string[] = [
+                makeIMPDoc(
+                    `asset:teleporter/${idStr}/`,
+                    { type: 'within', target: { 'tag/function': ['asset:teleporter/register'] } },
+                    ['テレポーターの位置の登録チェック']
+                ),
+                `execute unless data storage asset:teleporter DPR[{D:overworld,X:${pos.x},Y:${pos.y},Z:${pos.z}}] positioned ${pos} if entity @p[distance=..40] run function asset:teleporter/${idStr}/register`
+            ];
+            writeFile(getOutputPath(`teleporter/${idStr}/.mcfunction`), contentA.join('\n'));
+
+            const contentB: string[] = [
+                makeIMPDoc(
+                    `asset:spawner/${idStr}/register`,
+                    { type: 'within', target: { function: [`asset:spawner/${idStr}/`] } },
+                    ['スポナーの定義データ']
+                ),
+                '',
+                '',
+                'function asset:spawner/common/register'
+            ];
+            writeFile(getOutputPath(`spawner/${idStr}/register.mcfunction`), contentB.join('\n'));
+        });
+}
+
 async function run() {
     // await genIslandRegistry();
     // await genSpawnerRegistry();
