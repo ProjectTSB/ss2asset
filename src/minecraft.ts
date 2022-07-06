@@ -35,7 +35,7 @@ export function makeIMPDoc(resourcePath: string, accessor: IMPDocAccessor = ACCE
         ...accessor.type !== 'within'
             ? [`@${accessor.type}`]
             : mkComplexAccessorStrings(accessor.target)
-    ].map(v => `#${v.indexOf('>') !== -1 ? '' : ' '}${v}`).concat(['']).join('\n');
+    ].map(v => `#${v.indexOf('>') !== -1 ? '' : ' '}${v}`).map(s => s.trimEnd()).concat(['']).join('\n');
 }
 
 export function getResourcePath(filePath: string, datapackRoot: string, fileType?: FileType): string {
