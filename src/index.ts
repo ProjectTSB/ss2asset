@@ -158,7 +158,7 @@ async function genTeleporterRegistry() {
         group: string,
         dimension: string,
         pos: Vector3D,
-        activationKind: 'InvisibleDeactivate' | 'VisibleDeactivate' | 'Activate',
+        activationState: 'InvisibleDeactivate' | 'VisibleDeactivate' | 'Activate',
         color: 'white' | 'aqua' | undefined
     }
 
@@ -186,7 +186,7 @@ async function genTeleporterRegistry() {
                 return false;
             }
             if (data[3] === '') {
-                console.log(`id: ${data[0]} / invalid group.`);
+                console.log(`id: ${data[0]} / invalid dimension.`);
                 return false;
             }
             if (isInvalidNumStr(data[4]) || isInvalidNumStr(data[5]) || isInvalidNumStr(data[6])) {
@@ -208,10 +208,10 @@ async function genTeleporterRegistry() {
             group: data[1],
             dimension: data[3],
             pos: new Vector3D(parseInt(data[4], 10), parseInt(data[5], 10), parseInt(data[6], 10)),
-            activationKind: activationMap[data[7] as keyof typeof activationMap]!,
+            activationState: activationMap[data[7] as keyof typeof activationMap]!,
             color: colorMap[data[8] as keyof typeof colorMap]
         }))
-        .forEach(({ id, group, dimension: dim, pos, activationKind, color }) => {
+        .forEach(({ id, group, dimension: dim, pos, activationState, color }) => {
             const idStr = `0${id}`.slice(-2);
             const contentA: string[] = [
                 makeIMPDoc(
@@ -230,10 +230,16 @@ async function genTeleporterRegistry() {
                     ['スポナーの定義データ']
                 ),
                 '',
+                register('重複防止レジストリへの登録', 'DPR', `{D:overworld,X:${pos.x},Y:${pos.y},Z:${pos.z}}`),
                 '',
-                'function asset:spawner/common/register'
+                register('ID (int)','ID',id),
+                register('GroupID (string)', 'GroupID', group),
+                register('デフォルトの起動状態 ("InvisibleDeactivate" | "VisibleDeactivate" | "Activate")', 'ActivationState', activationState),
+                register('色 ("white" | "aqua")', 'Color', color),
+                '',
+                'function asset:teleporter/common/register'
             ];
-            writeFile(getOutputPath(`spawner/${idStr}/register.mcfunction`), contentB.join('\n'));
+            writeFile(getOutputPath(`teleporter/${idStr}/register.mcfunction`), contentB.join('\n'));
         });
 }
 
