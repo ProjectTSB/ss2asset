@@ -46,15 +46,7 @@ export abstract class AbstractVector<P extends { [key in K]: number }, K extends
     abstract calc<B extends Record<K, unknown>, C extends Record<K, unknown>>(b: B, c: C, f: (a: number, b: B[K], c: C[K]) => number): P;
     abstract calc<B extends Record<K, unknown>, C extends Record<K, unknown>>(b: B, c: C | ((a: number, b: B[K]) => number), f?: (a: number, b: B[K], c: C[K]) => number): P;
 
-    abstract setX(x: number): P;
-
-    abstract setY(y: number): P;
-
-    abstract update(...f: ((x: number, y: number) => number)[]): P;
-
-    abstract updateX(f: (x: number) => number): P;
-
-    abstract updateY(f: (y: number) => number): P;
+    abstract update(...f: ((...dimensions: number[]) => number)[]): P;
 
     abstract clone(): P;
 
