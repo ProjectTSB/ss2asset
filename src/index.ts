@@ -2,6 +2,7 @@ import { parse as csvParse } from 'csv-parse/sync';
 import path from 'path';
 import { makeIMPDoc } from './minecraft';
 import { List } from './types/List';
+import { Vector3D } from './types/Vector3D';
 import { readFile, toSnakeCase, writeFile } from './utils';
 
 const getInputPath = (file: string) => path.join(process.cwd(), 'input', file);
@@ -23,17 +24,16 @@ function mkRegisterCommand(storage: string, indent = 4): (
 async function genIslandRegistry() {
     const register = mkRegisterCommand('asset:island', 4);
 
-    const mobMap = parseCsv<List<string, 2>[]>(await readFile(getInputPath('mob.csv')));
-
     parseCsv<List<string | undefined, 5>[]>(await readFile(getInputPath('island.csv')))
         .filter(v => v[0] && v[1] && v[2] && v[3])
         .map(v => v.map(v2 => v2?.trim()) as [...List<string, 4>, string?])
         .filter(v => /[0-9]+/.test(v[0]))
         .filter(v => /^[-+]?[0-9]*\.?[0-9]+ [-+]?[0-9]*\.?[0-9]+ [-+]?[0-9]*\.?[0-9]+$/.test(v[2]))
-        .map(([id, dim, pos, rot, bossName]) => [
-            id, dim, pos, rot,
-            bossName ? mobMap.find(v => v[1] === bossName)?.[0] : undefined
-        ] as [...List<string, 4>, string?])
+        .map(v => [
+            v[0], v[1],
+            new Vector3D(...(v[2].split(' ').map(v => parseInt(v, 10)) as List<number, 3>)),
+            v[3], v[4]
+        ] as [string, string, Vector3D, string, string?])
         .forEach(([id, dim, pos, rot, bossId]) => {
             const idStr = `0${id}`.slice(-2);
             const contentA: string[] = [
@@ -42,7 +42,7 @@ async function genIslandRegistry() {
                     { type: 'within', target: { 'tag/function': ['asset:island/register'] } },
                     ['島の呪われた神器の位置を書く']
                 ),
-                `execute in ${toSnakeCase(dim)} positioned ${pos} unless entity @e[type=armor_stand,tag=CursedTreasure,distance=..0.001] run function asset:island/${idStr}/register/register`
+                `execute unless data storage asset:spawner DPR[{D:${dim},X:${pos.x},Y:${pos.y},Z:${pos.z}}] in ${dim} positioned ${pos} if entity @p[distance=..40] run function asset:spawner/${idStr}/register`
             ];
             writeFile(getOutputPath(`island/${idStr}/register/.mcfunction`), contentA.join('\n'));
 
@@ -105,7 +105,11 @@ async function genSpawnerRegistry() {
     parseCsv<List<string, 28>[]>(await readFile(getInputPath('spawner.csv')))
         .slice(1)
         .filter(v => v[5] !== '')
-        .map(v => [parseInt(v[0], 10), v[4].trim(), v[5].trim(), mkSpawnerData(v)] as [number, string, string, SpawnerData])
+        .map(v => [
+            parseInt(v[0], 10), v[4].trim(),
+            new Vector3D(...(v[5].trim().split(' ').map(v => parseInt(v, 10)) as List<number, 3>)),
+            mkSpawnerData(v)
+        ] as [number, string, Vector3D, SpawnerData])
         .forEach(([id, dim, pos, data]) => {
             const idStr = `00${id}`.slice(-3);
             const contentA: string[] = [
@@ -114,7 +118,7 @@ async function genSpawnerRegistry() {
                     { type: 'within', target: { 'tag/function': ['asset:spawner/register'] } },
                     ['スポナーの呪われた神器の位置を書く']
                 ),
-                `execute in ${dim} positioned ${pos} unless block ~ ~ ~ barrier unless entity @e[type=snowball,tag=Spawner,distance=..0.41] run function asset:spawner/${idStr}/register`
+                `execute unless data storage asset:island DPR[{D:${dim},X:${pos.x},Y:${pos.y},Z:${pos.z}}] in ${toSnakeCase(dim)} positioned ${pos} if entity @p[distance=..40] run function asset:island/${idStr}/register/register`
             ];
             writeFile(getOutputPath(`spawner/${idStr}/.mcfunction`), contentA.join('\n'));
 
