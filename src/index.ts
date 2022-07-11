@@ -40,9 +40,9 @@ async function genIslandRegistry() {
                 makeIMPDoc(
                     `asset:island/${idStr}/register/`,
                     { type: 'within', target: { 'tag/function': ['asset:island/register'] } },
-                    ['島の呪われた神器の位置を書く']
+                    ['島の呪われた神器のチェック']
                 ),
-                `execute unless data storage asset:spawner DPR[{D:${dim},X:${pos.x},Y:${pos.y},Z:${pos.z}}] in ${dim} positioned ${pos} if entity @p[distance=..40] run function asset:spawner/${idStr}/register`
+                `execute unless data storage asset:island DPR[{D:${dim},X:${pos.x},Y:${pos.y},Z:${pos.z}}] in ${dim} positioned ${pos} if entity @p[distance=..40] run function asset:island/${idStr}/register/register`
             ];
             writeFile(getOutputPath(`island/${idStr}/register/.mcfunction`), contentA.join('\n'));
 
@@ -55,7 +55,7 @@ async function genIslandRegistry() {
                 '',
                 register('ID (int)', 'ID', id),
                 register('Rotation (float)', 'Rotation', `${rot}f`),
-                register('BOSS ID (int) (Optional)', 'BossID', bossId, !!bossId),
+                register('BOSS ID (int) (Optional)', 'BossID', bossId, !bossId),
                 '',
                 'function asset:island/common/register'
             ];
@@ -116,9 +116,9 @@ async function genSpawnerRegistry() {
                 makeIMPDoc(
                     `asset:spawner/${idStr}/`,
                     { type: 'within', target: { 'tag/function': ['asset:spawner/register'] } },
-                    ['スポナーの呪われた神器の位置を書く']
+                    ['スポナーのチェック']
                 ),
-                `execute unless data storage asset:island DPR[{D:${dim},X:${pos.x},Y:${pos.y},Z:${pos.z}}] in ${toSnakeCase(dim)} positioned ${pos} if entity @p[distance=..40] run function asset:island/${idStr}/register/register`
+                `execute unless data storage asset:spawner DPR[{D:${dim},X:${pos.x},Y:${pos.y},Z:${pos.z}}] in ${dim} positioned ${pos} if entity @p[distance=..40] run function asset:spawner/${idStr}/register`
             ];
             writeFile(getOutputPath(`spawner/${idStr}/.mcfunction`), contentA.join('\n'));
 
@@ -225,14 +225,14 @@ async function genTeleporterRegistry() {
 
             const contentB: string[] = [
                 makeIMPDoc(
-                    `asset:spawner/${idStr}/register`,
-                    { type: 'within', target: { function: [`asset:spawner/${idStr}/`] } },
+                    `asset:teleporter/${idStr}/register`,
+                    { type: 'within', target: { function: [`asset:teleporter/${idStr}/`] } },
                     ['スポナーの定義データ']
                 ),
                 '',
                 register('重複防止レジストリへの登録', 'DPR', `{D:overworld,X:${pos.x},Y:${pos.y},Z:${pos.z}}`),
                 '',
-                register('ID (int)','ID',id),
+                register('ID (int)', 'ID', id),
                 register('GroupID (string)', 'GroupID', group),
                 register('デフォルトの起動状態 ("InvisibleDeactivate" | "VisibleDeactivate" | "Activate")', 'ActivationState', activationState),
                 register('色 ("white" | "aqua")', 'Color', color),
@@ -244,8 +244,9 @@ async function genTeleporterRegistry() {
 }
 
 async function run() {
-    // await genIslandRegistry();
-    // await genSpawnerRegistry();
+    await genIslandRegistry();
+    await genSpawnerRegistry();
+    await genTeleporterRegistry();
 }
 
 run();
