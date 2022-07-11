@@ -219,7 +219,7 @@ async function genTeleporterRegistry() {
                     { type: 'within', target: { 'tag/function': ['asset:teleporter/register'] } },
                     ['テレポーターの位置の登録チェック']
                 ),
-                `execute unless data storage asset:teleporter DPR[{D:overworld,X:${pos.x},Y:${pos.y},Z:${pos.z}}] positioned ${pos} if entity @p[distance=..40] run function asset:teleporter/${idStr}/register`
+                `execute unless data storage asset:teleporter DPR[{D:${dim},X:${pos.x},Y:${pos.y},Z:${pos.z}}] in ${dim} positioned ${pos} if entity @p[distance=..40] run function asset:teleporter/${idStr}/register`
             ];
             writeFile(getOutputPath(`teleporter/${idStr}/.mcfunction`), contentA.join('\n'));
 
