@@ -12,13 +12,20 @@ function parseCsv<T>(text: string): T {
     return csvParse(text) as T;
 }
 
-function mkRegisterCommand(storage: string, indent = 4): (
-    (mes: string, path: string, value: { toString(): string } | undefined, commentOut?: boolean) => string
-) {
-    return (m, p, v, co = false) => [
-        `# ${m}`,
-        `${' '.repeat(indent)}${co ? '# ' : ''}data modify storage ${storage} ${p} set value ${v !== undefined ? v : ''}`
-    ].join('\n');
+function mkRegisterCommand(storage: string, indent = 4): {
+    set: (mes: string, path: string, value: { toString(): string } | undefined, commentOut?: boolean) => string,
+    append: (mes: string, path: string, value: { toString(): string } | undefined, commentOut?: boolean) => string,
+} {
+    return {
+        set: (m, p, v, co = false) => [
+            `# ${m}`,
+            `${' '.repeat(indent)}${co ? '# ' : ''}data modify storage ${storage} ${p} set value ${v !== undefined ? v : ''}`
+        ].join('\n'),
+        append: (m, p, v, co = false) => [
+            `# ${m}`,
+            `${' '.repeat(indent)}${co ? '# ' : ''}data modify storage ${storage} ${p} append value ${v !== undefined ? v : ''}`
+        ].join('\n')
+    };
 }
 
 async function genIslandRegistry() {
@@ -53,9 +60,11 @@ async function genIslandRegistry() {
                     ['島の定義データ']
                 ),
                 '',
-                register('ID (int)', 'ID', id),
-                register('Rotation (float)', 'Rotation', `${rot}f`),
-                register('BOSS ID (int) (Optional)', 'BossID', bossId, !bossId),
+                register.append('重複防止レジストリへの登録', 'DPR', `{D:${dim},X:${pos.x},Y:${pos.y},Z:${pos.z}}`),
+                '',
+                register.set('ID (int)', 'ID', id),
+                register.set('Rotation (float)', 'Rotation', `${rot}f`),
+                register.set('BOSS ID (int) (Optional)', 'BossID', bossId, !bossId),
                 '',
                 'function asset:island/common/register'
             ];
@@ -129,18 +138,20 @@ async function genSpawnerRegistry() {
                     ['スポナーの定義データ']
                 ),
                 '',
-                register('ID (int)', 'ID', id),
-                register('体力 (int) このスポナーから召喚されたMobがN体殺されると破壊されるか', 'HP', data.hp),
-                register('SpawnPotentials(int | int[] | ({ Weight: int, Id: int })[]) MobAssetのIDを指定する',
+                register.append('重複防止レジストリへの登録', 'DPR', `{D:${dim},X:${pos.x},Y:${pos.y},Z:${pos.z}}`),
+                '',
+                register.set('ID (int)', 'ID', id),
+                register.set('体力 (int) このスポナーから召喚されたMobがN体殺されると破壊されるか', 'HP', data.hp),
+                register.set('SpawnPotentials(int | int[] | ({ Weight: int, Id: int })[]) MobAssetのIDを指定する',
                     'SpawnPotentials', JSON.stringify(data.spawnPotentials).replace(/"/g, '')),
-                register('一度に召喚する数 (int)', 'SpawnCount', data.spawnCount),
-                register('動作範囲 (int) この範囲にプレイヤーが存在するとき、Mobの召喚を開始する',
+                register.set('一度に召喚する数 (int)', 'SpawnCount', data.spawnCount),
+                register.set('動作範囲 (int) この範囲にプレイヤーが存在するとき、Mobの召喚を開始する',
                     'SpawnRange', data.spawnRange),
-                register('初回召喚時間 (int)', 'Delay', data.delay),
-                register('最低召喚間隔 (int)', 'MinSpawnDelay', data.minSpawnDelay),
-                register('最大召喚間隔 (int)', 'MaxSpawnDelay', data.maxSpawnDelay),
-                register('近くのエンティティの最大数 (int)', 'MaxNearbyEntities', data.maxNearbyEntities),
-                register('この範囲にプレイヤーが存在するとき、Mobの召喚を開始する // distance <= 100',
+                register.set('初回召喚時間 (int)', 'Delay', data.delay),
+                register.set('最低召喚間隔 (int)', 'MinSpawnDelay', data.minSpawnDelay),
+                register.set('最大召喚間隔 (int)', 'MaxSpawnDelay', data.maxSpawnDelay),
+                register.set('近くのエンティティの最大数 (int)', 'MaxNearbyEntities', data.maxNearbyEntities),
+                register.set('この範囲にプレイヤーが存在するとき、Mobの召喚を開始する // distance <= 100',
                     'RequiredPlayerRange', data.requiredPlayerRange),
                 '',
                 'function asset:spawner/common/register'
@@ -230,12 +241,12 @@ async function genTeleporterRegistry() {
                     ['スポナーの定義データ']
                 ),
                 '',
-                register('重複防止レジストリへの登録', 'DPR', `{D:overworld,X:${pos.x},Y:${pos.y},Z:${pos.z}}`),
+                register.append('重複防止レジストリへの登録', 'DPR', `{D:overworld,X:${pos.x},Y:${pos.y},Z:${pos.z}}`),
                 '',
-                register('ID (int)', 'ID', id),
-                register('GroupID (string)', 'GroupID', group),
-                register('デフォルトの起動状態 ("InvisibleDeactivate" | "VisibleDeactivate" | "Activate")', 'ActivationState', activationState),
-                register('色 ("white" | "aqua")', 'Color', color),
+                register.set('ID (int)', 'ID', id),
+                register.set('GroupID (string)', 'GroupID', group),
+                register.set('デフォルトの起動状態 ("InvisibleDeactivate" | "VisibleDeactivate" | "Activate")', 'ActivationState', activationState),
+                register.set('色 ("white" | "aqua")', 'Color', color),
                 '',
                 'function asset:teleporter/common/register'
             ];
