@@ -9,7 +9,7 @@ import { mkRegisterCommand } from "./common";
 export async function genIslandRegistry(inputPath: string, outputPath: string) {
   const register = mkRegisterCommand("asset:island", 4);
 
-  parseCsv<List<string | undefined, 5>[]>(await readFile(path.join(inputPath, "island.csv")))
+  parseCsv<List<string | undefined, 5>>(await readFile(path.join(inputPath, "island.csv")))
     .filter(v => v[0] && v[1] && v[2] && v[3])
     .map(v => v.map(v2 => v2?.trim()) as [...List<string, 4>, string?])
     .filter(v => /[0-9]+/.test(v[0]))

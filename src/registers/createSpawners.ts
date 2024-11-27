@@ -45,7 +45,7 @@ const mkSpawnerData = (data: List<string, 28>): SpawnerData => ({
 export async function genSpawnerRegistry(inputPath: string, outputPath: string) {
   const register = mkRegisterCommand("asset:spawner", 4);
 
-  parseCsv<List<string, 28>[]>(await readFile(path.join(inputPath, "spawner.csv")))
+  parseCsv<List<string, 28>>(await readFile(path.join(inputPath, "spawner.csv")))
     .slice(1)
     .filter(v => v[5] !== "")
     .map(v => [

@@ -29,7 +29,7 @@ const colorMap = {
 export async function genTeleporterRegistry(inputPath: string, outputPath: string) {
   const register = mkRegisterCommand("asset:teleporter", 4);
 
-  parseCsv<SpreadsheetColumns[]>(await readFile(path.join(outputPath, "teleporter.csv")))
+  parseCsv<SpreadsheetColumns>(await readFile(path.join(outputPath, "teleporter.csv")))
     .slice(1)
     .filter((data, i) => {
       const isInvalidNumStr = (str: string) => isNaN(parseInt(str));
