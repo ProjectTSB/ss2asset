@@ -254,10 +254,18 @@ async function genTeleporterRegistry() {
         });
 }
 
-async function run() {
-    await genIslandRegistry();
-    await genSpawnerRegistry();
-    await genTeleporterRegistry();
+async function run(mode: "island" | "spawner" | "teleporter") {
+    switch (mode) {
+        case "island":
+            await genIslandRegistry();
+            break;
+        case "spawner":
+            await genSpawnerRegistry();
+            break;
+        case "teleporter":
+            await genTeleporterRegistry();
+            break;
+    }
 }
 
-run();
+run("island");
