@@ -5,29 +5,29 @@ import { readFile, writeFile } from "../utils";
 import { parseCsv } from "../utils/csv";
 import { mkRegisterCommand } from "./common";
 
+type SpreadsheetColumns = [id: string, group: string, where: string, dimension: string, x: string, y: string, z: string, activationKind: string, color: string];
+interface TeleporterData {
+  id: number,
+  group: string,
+  dimension: string,
+  pos: Vector3D,
+  activationState: "InvisibleDeactivate" | "VisibleDeactivate" | "Activate",
+  color: "white" | "aqua" | undefined
+}
+
+const activationMap = {
+  "起動": "Activate",
+  "非起動-可視": "VisibleDeactivate",
+  "非起動-非可視": "InvisibleDeactivate"
+} as const;
+
+const colorMap = {
+  "白": "white",
+  "水色": "aqua"
+} as const;
+
 export async function genTeleporterRegistry(inputPath: string, outputPath: string) {
   const register = mkRegisterCommand("asset:teleporter", 4);
-
-  type SpreadsheetColumns = [id: string, group: string, where: string, dimension: string, x: string, y: string, z: string, activationKind: string, color: string];
-  interface TeleporterData {
-    id: number,
-    group: string,
-    dimension: string,
-    pos: Vector3D,
-    activationState: "InvisibleDeactivate" | "VisibleDeactivate" | "Activate",
-    color: "white" | "aqua" | undefined
-  }
-
-  const activationMap = {
-    "起動": "Activate",
-    "非起動-可視": "VisibleDeactivate",
-    "非起動-非可視": "InvisibleDeactivate"
-  } as const;
-
-  const colorMap = {
-    "白": "white",
-    "水色": "aqua"
-  } as const;
 
   parseCsv<SpreadsheetColumns[]>(await readFile(path.join(outputPath, "teleporter.csv")))
     .slice(1)

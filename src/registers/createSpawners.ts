@@ -6,43 +6,43 @@ import { readFile, writeFile } from "../utils";
 import { parseCsv } from "../utils/csv";
 import { mkRegisterCommand } from "./common";
 
+// eslint-disable-next-line @typescript-eslint/naming-convention
+type SpawnPotentials = number | { Id: number, Weight?: number }[] | number[];
+
+interface SpawnerData {
+  id: number
+  hp: number
+  spawnPotentials: SpawnPotentials
+  spawnCount: number
+  spawnRange: number
+  delay: number
+  minSpawnDelay: number
+  maxSpawnDelay: number
+  maxNearbyEntities: number
+  requiredPlayerRange: number
+}
+
+const mkSpawnPotentials = (data: List<string, 28>): SpawnPotentials => {
+  const h = [[data[8], data[10]], [data[11], data[13]], [data[14], data[16]], [data[17], data[19]]].filter(v => v[0] !== "");
+  return (h.every(v => v[1] === ""))
+    ? h.map(v => parseInt(v[0]))
+    // eslint-disable-next-line @typescript-eslint/naming-convention
+    : h.map(v => ({ Id: parseInt(v[0]), Weight: parseInt(v[1] || "1") }));
+};
+const mkSpawnerData = (data: List<string, 28>): SpawnerData => ({
+  id: parseInt(data[0], 10),
+  hp: parseInt(data[20], 10),
+  spawnPotentials: mkSpawnPotentials(data),
+  spawnCount: parseInt(data[21], 10),
+  spawnRange: parseInt(data[22], 10),
+  delay: parseInt(data[23], 10),
+  minSpawnDelay: parseInt(data[24], 10),
+  maxSpawnDelay: parseInt(data[25], 10),
+  maxNearbyEntities: parseInt(data[26], 10),
+  requiredPlayerRange: parseInt(data[27], 10)
+});
+
 export async function genSpawnerRegistry(inputPath: string, outputPath: string) {
-  // eslint-disable-next-line @typescript-eslint/naming-convention
-  type SpawnPotentials = number | { Id: number, Weight?: number }[] | number[];
-
-  interface SpawnerData {
-    id: number
-    hp: number
-    spawnPotentials: SpawnPotentials
-    spawnCount: number
-    spawnRange: number
-    delay: number
-    minSpawnDelay: number
-    maxSpawnDelay: number
-    maxNearbyEntities: number
-    requiredPlayerRange: number
-  }
-
-  const mkSpawnPotentials = (data: List<string, 28>): SpawnPotentials => {
-    const h = [[data[8], data[10]], [data[11], data[13]], [data[14], data[16]], [data[17], data[19]]].filter(v => v[0] !== "");
-    return (h.every(v => v[1] === ""))
-      ? h.map(v => parseInt(v[0]))
-      // eslint-disable-next-line @typescript-eslint/naming-convention
-      : h.map(v => ({ Id: parseInt(v[0]), Weight: parseInt(v[1] || "1") }));
-  };
-  const mkSpawnerData = (data: List<string, 28>): SpawnerData => ({
-    id: parseInt(data[0], 10),
-    hp: parseInt(data[20], 10),
-    spawnPotentials: mkSpawnPotentials(data),
-    spawnCount: parseInt(data[21], 10),
-    spawnRange: parseInt(data[22], 10),
-    delay: parseInt(data[23], 10),
-    minSpawnDelay: parseInt(data[24], 10),
-    maxSpawnDelay: parseInt(data[25], 10),
-    maxNearbyEntities: parseInt(data[26], 10),
-    requiredPlayerRange: parseInt(data[27], 10)
-  });
-
   const register = mkRegisterCommand("asset:spawner", 4);
 
   parseCsv<List<string, 28>[]>(await readFile(path.join(inputPath, "spawner.csv")))
