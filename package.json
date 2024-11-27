@@ -6,7 +6,8 @@
   "license": "Creative Commons Zero",
   "private": true,
   "scripts": {
-    "test": "ts-node src/index.ts"
+    "test": "ts-node src/index.ts",
+    "lint": "eslint . --ext .ts"
   },
   "devDependencies": {
     "@types/node": "^16.11.12",
