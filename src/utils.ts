@@ -1,8 +1,8 @@
-import https from 'https';
-import fs, { promises as fsp } from 'fs';
-import jschardet from 'jschardet';
-import iconv from 'iconv-lite';
-import path from 'path';
+import https from "https";
+import fs, { promises as fsp } from "fs";
+import jschardet from "jschardet";
+import iconv from "iconv-lite";
+import path from "path";
 
 export function mod(n: number, m: number): number {
     return (n % m + m) % m;
@@ -14,7 +14,7 @@ export function toRadians(degree: number): number {
 
 export function toSnakeCase(str: string): string {
     const preRes = str.replace(/[A-Z]+/g, v => `_${v.toLowerCase()}`);
-    if (preRes.indexOf('_') === 0) return preRes.slice(1);
+    if (preRes.indexOf("_") === 0) return preRes.slice(1);
     return preRes;
 }
 
@@ -44,7 +44,7 @@ export function round(n: number, places = 1): number {
 export async function setTimeOut(milisec: number): Promise<never> {
     // eslint-disable-next-line brace-style
     return await new Promise((_, reject) => setTimeout(
-        () => reject(new Error('time out')),
+        () => reject(new Error("time out")),
         milisec
     ));
 }
@@ -52,10 +52,10 @@ export async function setTimeOut(milisec: number): Promise<never> {
 export async function download(uri: string): Promise<string> {
     return await new Promise((resolve, reject) => {
         https.get(uri, res => {
-            let body = '';
-            res.on('data', chunk => body += chunk);
-            res.on('error', reject);
-            res.on('end', () => resolve(body));
+            let body = "";
+            res.on("data", chunk => body += chunk);
+            res.on("error", reject);
+            res.on("end", () => resolve(body));
         }).end();
     });
 }
@@ -82,13 +82,13 @@ export async function readFile(targetPath: string, readSection?: { start: number
         const data: Buffer[] = [];
 
         fs.createReadStream(targetPath, { highWaterMark: 256 * 1024, ...readSection })
-            .on('data', chunk => data.push(chunk as Buffer))
-            .on('end', () => {
+            .on("data", chunk => data.push(chunk as Buffer))
+            .on("end", () => {
                 const res = Buffer.concat(data);
                 const charCode = jschardet.detect(res).encoding;
                 resolve(iconv.decode(res, charCode));
             })
-            .on('error', reject);
+            .on("error", reject);
     });
 }
 

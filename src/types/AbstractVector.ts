@@ -5,7 +5,7 @@ export abstract class AbstractVector<P extends { [key in K]: number }, K extends
     add(p: number): P;
     add(p: P): P;
     add(p: number | P): P {
-        return typeof p === 'number'
+        return typeof p === "number"
             ? this.map(n => n + p)
             : this.calc(p, (a, b) => a + b);
     }
@@ -13,7 +13,7 @@ export abstract class AbstractVector<P extends { [key in K]: number }, K extends
     sub(p: number): P;
     sub(p: P): P;
     sub(p: number | P): P {
-        return typeof p === 'number'
+        return typeof p === "number"
             ? this.map(n => n - p)
             : this.calc(p, (a, b) => a - b);
     }
@@ -21,7 +21,7 @@ export abstract class AbstractVector<P extends { [key in K]: number }, K extends
     times(p: number): P;
     times(p: P): P;
     times(p: number | P): P {
-        return typeof p === 'number'
+        return typeof p === "number"
             ? this.map(n => n * p)
             : this.calc(p, (a, b) => a * b);
     }
@@ -29,7 +29,7 @@ export abstract class AbstractVector<P extends { [key in K]: number }, K extends
     div(p: number): P;
     div(p: P): P;
     div(p: number | P): P {
-        return typeof p === 'number'
+        return typeof p === "number"
             ? this.map(n => n / p)
             : this.calc(p, (a, b) => a / b);
     }

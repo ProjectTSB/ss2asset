@@ -1,6 +1,6 @@
-import { AbstractVector } from './AbstractVector';
+import { AbstractVector } from "./AbstractVector";
 
-type Axis = 'x' | 'y';
+type Axis = "x" | "y";
 type Vector2DLike = Record<Axis, unknown>;
 
 export class Vector2D extends AbstractVector<Vector2D, Axis> {
@@ -15,11 +15,11 @@ export class Vector2D extends AbstractVector<Vector2D, Axis> {
     override calc<B extends Vector2DLike>(b: B, f: (a: number, b: B[Axis]) => number): Vector2D;
     override calc<B extends Vector2DLike, C extends Vector2DLike>(b: B, c: C, f: (a: number, b: B[Axis], c: C[Axis]) => number): Vector2D;
     override calc<B extends Vector2DLike, C extends Vector2DLike>(b: B, c: C | ((a: number, b: B[Axis]) => number), f?: (a: number, b: B[Axis], c: C[Axis]) => number): Vector2D {
-        if (typeof c === 'function')
+        if (typeof c === "function")
             return new Vector2D(c(this.x, b.x), c(this.y, b.y));
-        if (typeof f === 'function')
+        if (typeof f === "function")
             return new Vector2D(f(this.x, b.x, c.x), f(this.y, b.y, c.y));
-        throw Error('Illegal argument error.');
+        throw Error("Illegal argument error.");
     }
 
     setX(x: number): Vector2D {

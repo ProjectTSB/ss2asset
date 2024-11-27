@@ -54,7 +54,10 @@
         "no-unneeded-ternary": "warn",
         "quotes": [
             "warn",
-            "single"
+            "double",
+            {
+                "avoidEscape": true
+            }
         ],
         "space-before-function-paren": [
             "warn",
