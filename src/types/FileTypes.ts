@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/naming-convention */
 import * as path from "path";
-import minimatch from "minimatch";
+import { minimatch } from "minimatch";
 
 export type FileType =
     | "advancement"
