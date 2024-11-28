@@ -1,8 +1,8 @@
 import path from "path";
-import { makeIMPDoc } from "../minecraft";
+import { makeIMPDoc } from "../utils/minecraft";
 import { List } from "../types/List";
 import { Vector3D } from "../types/Vector3D";
-import { readFile, writeFile } from "../utils";
+import { readFile, writeFile } from "../utils/io";
 import { parseCsv } from "../utils/csv";
 import { mkRegisterCommand } from "./common";
 
