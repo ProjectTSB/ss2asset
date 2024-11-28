@@ -7,11 +7,13 @@
   "private": true,
   "scripts": {
     "test": "ts-node src/index.ts",
-    "lint": "eslint . --ext .ts"
+    "lint": "eslint src"
   },
   "devDependencies": {
-    "@types/node": "^22.10.0",
+    "@eslint/eslintrc": "^3.2.0",
+    "@eslint/js": "^9.15.0",
     "@types/minimatch": "^5.1.2",
+    "@types/node": "^22.10.0",
     "@typescript-eslint/eslint-plugin": "^8.16.0",
     "@typescript-eslint/parser": "^8.16.0",
     "eslint": "^9.15.0",

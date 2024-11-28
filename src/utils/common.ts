@@ -23,7 +23,6 @@ export function getSafeRecordValue<T extends string | number | symbol, U>(data: 
 }
 
 export async function setTimeOut(milisec: number): Promise<never> {
-    // eslint-disable-next-line brace-style
     return await new Promise((_, reject) => setTimeout(
         () => reject(new Error("time out")),
         milisec

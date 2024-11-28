@@ -24,6 +24,7 @@ export async function genIslandRegistry(inputPath: string, outputPath: string) {
       const contentA: string[] = [
         makeIMPDoc(
           `asset:island/${idStr}/register/`,
+          // eslint-disable-next-line @typescript-eslint/naming-convention
           { type: "within", target: { "tag/function": ["asset:island/register"] } },
           ["島の呪われた神器のチェック"]
         ),

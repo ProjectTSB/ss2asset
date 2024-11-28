@@ -58,6 +58,7 @@ export async function genSpawnerRegistry(inputPath: string, outputPath: string) 
       const contentA: string[] = [
         makeIMPDoc(
           `asset:spawner/${idStr}/`,
+          // eslint-disable-next-line @typescript-eslint/naming-convention
           { type: "within", target: { "tag/function": ["asset:spawner/register"] } },
           ["スポナーのチェック"]
         ),

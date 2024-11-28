@@ -17,7 +17,9 @@ interface TeleporterData {
 
 const activationMap = {
   "起動": "Activate",
+  // eslint-disable-next-line @typescript-eslint/naming-convention
   "非起動-可視": "VisibleDeactivate",
+  // eslint-disable-next-line @typescript-eslint/naming-convention
   "非起動-非可視": "InvisibleDeactivate"
 } as const;
 
@@ -72,6 +74,7 @@ export async function genTeleporterRegistry(inputPath: string, outputPath: strin
       const contentA: string[] = [
         makeIMPDoc(
           `asset:teleporter/${idStr}/`,
+          // eslint-disable-next-line @typescript-eslint/naming-convention
           { type: "within", target: { "tag/function": ["asset:teleporter/register"] } },
           ["テレポーターの位置の登録チェック"]
         ),
