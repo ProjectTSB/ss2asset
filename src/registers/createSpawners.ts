@@ -53,44 +53,28 @@ export async function genSpawnerRegistry(inputPath: string, outputPath: string) 
       new Vector3D(...(v[5].trim().split(" ").map(v => parseInt(v, 10)) as List<number, 3>)),
       mkSpawnerData(v)
     ] as [number, string, Vector3D, SpawnerData])
-    .forEach(([id, dim, pos, data]) => {
-      const idStr = `00${id}`.slice(-3);
-      const contentA: string[] = [
+    .forEach(([id, , pos, data]) => {
+      const content: string[] = [
         makeIMPDoc(
-          `asset:spawner/${idStr}/`,
-          // eslint-disable-next-line @typescript-eslint/naming-convention
-          { type: "within", target: { "tag/function": ["asset:spawner/register"] } },
-          ["スポナーのチェック"]
-        ),
-        `execute unless data storage asset:spawner DPR[{D:${dim},X:${pos.x},Y:${pos.y},Z:${pos.z}}] in ${dim} positioned ${pos} if entity @p[distance=..40] run function asset:spawner/${idStr}/register`
-      ];
-      writeFile(path.join(outputPath, `spawner/${idStr}/.mcfunction`), contentA.join("\n"));
-
-      const contentB: string[] = [
-        makeIMPDoc(
-          `asset:spawner/${idStr}/register`,
-          { type: "within", target: { function: [`asset:spawner/${idStr}/`] } },
+          `asset:spawner/${id}/register`,
+          { type: "within", target: { function: ["asset_manager:spawner/register/register.m"] } },
           ["スポナーの定義データ"]
         ),
         "",
-        register.append("重複防止レジストリへの登録", "DPR", `{D:${dim},X:${pos.x},Y:${pos.y},Z:${pos.z}}`),
+        `execute unless loaded ${pos.x} ${pos.y} ${pos.z} run return 1`,
         "",
         register.set("ID (int)", "ID", id),
+        register.set("Pos ([int] @ 3)", "Pos", `[${pos.x}, ${pos.y}, ${pos.z}]`),
         register.set("体力 (int) このスポナーから召喚されたMobがN体殺されると破壊されるか", "HP", data.hp),
-        register.set("SpawnPotentials(int | int[] | ({ Weight: int, Id: int })[]) MobAssetのIDを指定する",
-          "SpawnPotentials", JSON.stringify(data.spawnPotentials).replace(/"/g, "")),
+        register.set("SpawnPotentials(int | int[] | ({ Weight: int, Id: int })[]) MobAssetのIDを指定する", "SpawnPotentials", JSON.stringify(data.spawnPotentials).replace(/"/g, "")),
         register.set("一度に召喚する数 (int)", "SpawnCount", data.spawnCount),
-        register.set("動作範囲 (int) この範囲にプレイヤーが存在するとき、Mobの召喚を開始する",
-          "SpawnRange", data.spawnRange),
+        register.set("動作範囲 (int) この範囲にプレイヤーが存在するとき、Mobの召喚を開始する", "SpawnRange", data.spawnRange),
         register.set("初回召喚時間 (int)", "Delay", data.delay),
         register.set("最低召喚間隔 (int)", "MinSpawnDelay", data.minSpawnDelay),
         register.set("最大召喚間隔 (int)", "MaxSpawnDelay", data.maxSpawnDelay),
         register.set("近くのエンティティの最大数 (int)", "MaxNearbyEntities", data.maxNearbyEntities),
-        register.set("この範囲にプレイヤーが存在するとき、Mobの召喚を開始する // distance <= 100",
-          "RequiredPlayerRange", data.requiredPlayerRange),
-        "",
-        "function asset:spawner/common/register"
+        register.set("この範囲にプレイヤーが存在するとき、Mobの召喚を開始する // distance <= 100", "RequiredPlayerRange", data.requiredPlayerRange)
       ];
-      writeFile(path.join(outputPath, `spawner/${idStr}/register.mcfunction`), contentB.join("\n"));
+      writeFile(path.join(outputPath, `spawner/${id}/register.mcfunction`), content.join("\n"));
     });
 }

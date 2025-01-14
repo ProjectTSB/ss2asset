@@ -5,14 +5,15 @@ import { readFile, writeFile } from "../utils/io";
 import { parseCsv } from "../utils/csv";
 import { mkRegisterCommand } from "./common";
 
-type SpreadsheetColumns = [id: string, group: string, where: string, dimension: string, x: string, y: string, z: string, activationKind: string, color: string];
+type SpreadsheetColumns = [id: string, name: string, dimension: string, x: string, y: string, z: string, activationState: string, colorR: string, colorG: string, colorB: string, groups: string];
 interface TeleporterData {
   id: number,
-  group: string,
+  name: string,
   dimension: string,
   pos: Vector3D,
   activationState: "InvisibleDeactivate" | "VisibleDeactivate" | "Activate",
-  color: "white" | "aqua" | undefined
+  color: [number, number, number],
+  groups: string[],
 }
 
 const activationMap = {
@@ -23,81 +24,38 @@ const activationMap = {
   "非起動-非可視": "InvisibleDeactivate"
 } as const;
 
-const colorMap = {
-  "白": "white",
-  "水色": "aqua"
-} as const;
-
 export async function genTeleporterRegistry(inputPath: string, outputPath: string) {
   const register = mkRegisterCommand("asset:teleporter", 4);
 
-  parseCsv<SpreadsheetColumns>(await readFile(path.join(outputPath, "teleporter.csv")))
+  parseCsv<SpreadsheetColumns>(await readFile(path.join(inputPath, "teleporter.csv")))
     .slice(1)
-    .filter((data, i) => {
-      const isInvalidNumStr = (str: string) => isNaN(parseInt(str));
-      if (isInvalidNumStr(data[0])) {
-        console.log(`column ${i + 1} / invalid id.`);
-        return false;
-      }
-      if (data[1] === "") {
-        console.log(`id: ${data[0]} / invalid group.`);
-        return false;
-      }
-      if (data[3] === "") {
-        console.log(`id: ${data[0]} / invalid dimension.`);
-        return false;
-      }
-      if (isInvalidNumStr(data[4]) || isInvalidNumStr(data[5]) || isInvalidNumStr(data[6])) {
-        console.log(`id: ${data[0]} / invalid pos.`);
-        return false;
-      }
-      if (activationMap[data[7] as keyof typeof activationMap] === undefined) {
-        console.log(`id: ${data[0]} / invalid activation kind.`);
-        return false;
-      }
-      if (colorMap !== undefined && colorMap[data[8] as keyof typeof colorMap] === undefined) {
-        console.log(`id: ${data[0]} / invalid color.`);
-        return false;
-      }
-      return true;
-    })
+    .filter(data => data[1] !== "")
     .map<TeleporterData>(data => ({
       id: parseInt(data[0], 10),
-      group: data[1],
-      dimension: data[3],
-      pos: new Vector3D(parseInt(data[4], 10), parseInt(data[5], 10), parseInt(data[6], 10)),
-      activationState: activationMap[data[7] as keyof typeof activationMap]!,
-      color: colorMap[data[8] as keyof typeof colorMap]
+      name: data[1],
+      dimension: `"minecraft:${data[2]}"`,
+      pos: new Vector3D(parseInt(data[3], 10), parseInt(data[4], 10), parseInt(data[5], 10)),
+      activationState: activationMap[data[6] as keyof typeof activationMap],
+      color: [parseInt(data[7], 10), parseInt(data[8], 10), parseInt(data[9], 10)],
+      groups: data[10].split(",").map(v => v.trim())
     }))
-    .forEach(({ id, group, dimension: dim, pos, activationState, color }) => {
-      const idStr = `00${id}`.slice(-3);
-      const contentA: string[] = [
+    .forEach(({ id, dimension, pos, activationState, color, groups }) => {
+      const content: string[] = [
         makeIMPDoc(
-          `asset:teleporter/${idStr}/`,
-          // eslint-disable-next-line @typescript-eslint/naming-convention
-          { type: "within", target: { "tag/function": ["asset:teleporter/register"] } },
-          ["テレポーターの位置の登録チェック"]
-        ),
-        `execute unless data storage asset:teleporter DPR[{D:${dim},X:${pos.x},Y:${pos.y},Z:${pos.z}}] in ${dim} positioned ${pos} if entity @p[distance=..40] run function asset:teleporter/${idStr}/register`
-      ];
-      writeFile(path.join(outputPath, `teleporter/${idStr}/.mcfunction`), contentA.join("\n"));
-
-      const contentB: string[] = [
-        makeIMPDoc(
-          `asset:teleporter/${idStr}/register`,
-          { type: "within", target: { function: [`asset:teleporter/${idStr}/`] } },
-          ["スポナーの定義データ"]
+          `asset:teleporter/${id}/register`,
+          { type: "within", target: { function: [`asset:teleporter/${id}/`] } },
+          ["テレポーターの定義データ"]
         ),
         "",
-        register.append("重複防止レジストリへの登録", "DPR", `{D:${dim},X:${pos.x},Y:${pos.y},Z:${pos.z}}`),
+        `execute unless loaded ${pos.x} ${pos.y} ${pos.z} run return 1`,
         "",
         register.set("ID (int)", "ID", id),
-        register.set("GroupID (string)", "GroupID", group),
-        register.set('デフォルトの起動状態 ("InvisibleDeactivate" | "VisibleDeactivate" | "Activate")', "ActivationState", activationState),
-        register.set('色 ("white" | "aqua")', "Color", color),
-        "",
-        "function asset:teleporter/common/register"
+        register.set("Dimension (string[minecraft:dimension])", "Dimension", dimension),
+        register.set("Pos ([int] @ 3)", "Pos", `[${pos.x}, ${pos.y}, ${pos.z}]`),
+        register.set("GroupIDs ([string])", "GroupIDs", `[${groups.map(v => `"${v}"`).join(", ")}]`),
+        register.set('デフォルトの起動状態 ("InvisibleDeactivate" | "VisibleDeactivate" | "Activate")', "ActivationState", `"${activationState}"`),
+        register.set("色 ([int @ 0..255] @ 3)", "Color", `[${color.join(", ")}]`),
       ];
-      writeFile(path.join(outputPath, `teleporter/${idStr}/register.mcfunction`), contentB.join("\n"));
+      writeFile(path.join(outputPath, `teleporter/${id}/register.mcfunction`), content.join("\n"));
     });
 }

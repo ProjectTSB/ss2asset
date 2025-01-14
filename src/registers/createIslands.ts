@@ -1,52 +1,52 @@
 import path from "path";
 import { makeIMPDoc } from "../utils/minecraft";
-import { List } from "../types/List";
 import { Vector3D } from "../types/Vector3D";
 import { readFile, writeFile } from "../utils/io";
 import { parseCsv } from "../utils/csv";
 import { mkRegisterCommand } from "./common";
 
+type SpreadsheetColumns = [id: string, name: string, difficulty: string, dimension: string, x: string, y: string, z: string, tpCmd: string, tpCmd2: string, pos: string, rotation: string, a: string, b: string, c: string, bossId: string];
+interface IslandData {
+  id: number,
+  name: string,
+  dimension: string,
+  pos: Vector3D,
+  rotation: string,
+  bossId: string,
+}
+
 export async function genIslandRegistry(inputPath: string, outputPath: string) {
   const register = mkRegisterCommand("asset:island", 4);
 
-  parseCsv<List<string | undefined, 5>>(await readFile(path.join(inputPath, "island.csv")))
-    .filter(v => v[0] && v[1] && v[2] && v[3])
-    .map(v => v.map(v2 => v2?.trim()) as [...List<string, 4>, string?])
-    .filter(v => /[0-9]+/.test(v[0]))
-    .filter(v => /^[-+]?[0-9]*\.?[0-9]+ [-+]?[0-9]*\.?[0-9]+ [-+]?[0-9]*\.?[0-9]+$/.test(v[2]))
-    .map(v => [
-      v[0], v[1],
-      new Vector3D(...(v[2].split(" ").map(v => parseInt(v, 10)) as List<number, 3>)),
-      v[3], v[4]
-    ] as [string, string, Vector3D, string, string?])
-    .forEach(([id, dim, pos, rot, bossId]) => {
-      const idStr = `0${id}`.slice(-2);
-      const contentA: string[] = [
+  parseCsv<SpreadsheetColumns>(await readFile(path.join(inputPath, "island.csv")))
+    .slice(1)
+    .filter(data => data[1] !== "" && data[10] !== "")
+    .map<IslandData>(data => {
+      const pos = data[9].trim().split(" ").map(v => parseInt(v.trim(), 10));
+      return {
+        id: parseInt(data[0], 10),
+        name: data[1],
+        dimension: `minecraft:${data[3]}`,
+        pos: new Vector3D(pos[0], pos[1], pos[2]),
+        rotation: data[10],
+        bossId: data[14],
+      };
+    })
+    .forEach(({ id, pos, rotation, bossId }) => {
+      const content: string[] = [
         makeIMPDoc(
-          `asset:island/${idStr}/register/`,
-          // eslint-disable-next-line @typescript-eslint/naming-convention
-          { type: "within", target: { "tag/function": ["asset:island/register"] } },
-          ["島の呪われた神器のチェック"]
-        ),
-        `execute unless data storage asset:island DPR[{D:${dim},X:${pos.x},Y:${pos.y},Z:${pos.z}}] in ${dim} positioned ${pos} if entity @p[distance=..40] run function asset:island/${idStr}/register/register`
-      ];
-      writeFile(path.join(outputPath, `island/${idStr}/register/.mcfunction`), contentA.join("\n"));
-
-      const contentB: string[] = [
-        makeIMPDoc(
-          `asset:island/${idStr}/register/register`,
-          { type: "within", target: { function: [`asset:island/${idStr}/register/`] } },
+          `asset:island/${id}/register`,
+          { type: "within", target: { function: [`asset:island/${id}/`] } },
           ["島の定義データ"]
         ),
         "",
-        register.append("重複防止レジストリへの登録", "DPR", `{D:${dim},X:${pos.x},Y:${pos.y},Z:${pos.z}}`),
+        `execute unless loaded ${pos.x} ${pos.y} ${pos.z} run return 1`,
         "",
         register.set("ID (int)", "ID", id),
-        register.set("Rotation (float)", "Rotation", `${rot}f`),
-        register.set("BOSS ID (int) (Optional)", "BossID", bossId, !bossId),
-        "",
-        "function asset:island/common/register"
+        register.set("Pos ([int] @ 3)", "Pos", `[${pos.x}, ${pos.y}, ${pos.z}]`),
+        register.set("Rotation (string)", "Rotation", `${rotation}f`),
+        register.set("BossID (string)", "BossID", bossId, bossId === ""),
       ];
-      writeFile(path.join(outputPath, `island/${idStr}/register/register.mcfunction`), contentB.join("\n"));
+      writeFile(path.join(outputPath, `island/${id}/register.mcfunction`), content.join("\n"));
     });
 }
