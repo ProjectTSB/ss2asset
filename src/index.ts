@@ -27,8 +27,8 @@ async function run(mode: "island" | "spawner" | "teleporter" | "container") {
             break;
     }
 }
-//
-// run("island");
+
+run("island");
 run("spawner");
-// run("teleporter");
-// run("container");
+run("teleporter");
+run("container");

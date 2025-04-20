@@ -40,21 +40,36 @@ export async function genTeleporterRegistry(inputPath: string, outputPath: strin
       groups: data[10].split(",").map(v => v.trim())
     }))
     .forEach(({ id, dimension, pos, activationState, color, groups }) => {
+      const erContent: string[] = [
+        makeIMPDoc(
+          `asset:teleporter/${id}/early_register`,
+          // eslint-disable-next-line @typescript-eslint/naming-convention
+          { type: "within", target: { "tag/function": ["asset:teleporter/early_register"] } },
+          []
+        ),
+        "",
+        register.append("データ追加", "Teleporters", "{}"),
+        register.set("ID (int)", "Teleporters[-1].ID", id),
+        register.set("Dimension (string[minecraft:dimension])", "Teleporters[-1].Data.Dimension", dimension),
+        register.set("Pos ([int] @ 3)", "Teleporters[-1].Data.Pos", `[${pos.x}, ${pos.y}, ${pos.z}]`),
+        register.set("GroupIDs ([string])", "Teleporters[-1].Data.GroupIDs", `[${groups.map(v => `"${v}"`).join(", ")}]`),
+        register.set('デフォルトの起動状態 ("InvisibleDeactivate" | "VisibleDeactivate" | "Activate")', "Teleporters[-1].Data.ActivationState", `"${activationState}"`),
+        register.set("色 ([int @ 0..255] @ 3)", "Color", `[${color.join(", ")}]`),
+        "    function asset:teleporter/common/calculate_and_insert_color_data"
+      ];
+      writeFile(path.join(outputPath, `teleporter/${id}/early_register.mcfunction`), erContent.join("\n"));
+
       const content: string[] = [
         makeIMPDoc(
           `asset:teleporter/${id}/register`,
-          { type: "within", target: { function: [`asset:teleporter/${id}/`] } },
+          { type: "within", target: { function: ["asset:teleporter/register/register.m"] } },
           ["テレポーターの定義データ"]
         ),
         "",
         `execute unless loaded ${pos.x} ${pos.y} ${pos.z} run return 1`,
         "",
         register.set("ID (int)", "ID", id),
-        register.set("Dimension (string[minecraft:dimension])", "Dimension", dimension),
         register.set("Pos ([int] @ 3)", "Pos", `[${pos.x}, ${pos.y}, ${pos.z}]`),
-        register.set("GroupIDs ([string])", "GroupIDs", `[${groups.map(v => `"${v}"`).join(", ")}]`),
-        register.set('デフォルトの起動状態 ("InvisibleDeactivate" | "VisibleDeactivate" | "Activate")', "ActivationState", `"${activationState}"`),
-        register.set("色 ([int @ 0..255] @ 3)", "Color", `[${color.join(", ")}]`),
       ];
       writeFile(path.join(outputPath, `teleporter/${id}/register.mcfunction`), content.join("\n"));
     });

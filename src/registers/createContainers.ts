@@ -6,7 +6,7 @@ import { parseCsv } from "../utils/csv";
 import { mkRegisterCommand } from "./common";
 
 type LootAssets = [id: string, uuid: string, name: string, typ: "fixed" | "random", loot_table: string];
-type LootAssetContainers = [id: `${number}`, asset_id: string, world: string, x: string, y: string, z: string, block_id: string, facing: string | "null", waterlogged: `${number}` | "null", chest_type: string | "null"];
+type LootAssetContainers = [id: `${number}`, asset_id: string, world: string, x: string, y: string, z: string, block_id: string, facing: string | "", waterlogged: `${number}` | "", chest_type: string | ""];
 type LootAssetItems = [id: string, asset_id: string, slot: string, item: string, quantity: string];
 
 type ItemType = {type:"vanilla", id: string, tag: string | undefined} | {type:"preset", id: string} | {type:"artifact", id: `${number}`};
@@ -22,7 +22,7 @@ type ChestData = {
 
 const mkBlock = (data: LootAssetContainers): [pos: Vector3D, blockId: string] => {
   const pos = new Vector3D(parseInt(data[3]), parseInt(data[4]), parseInt(data[5]));
-  const facing = data[7] !== "null" ? `facing=${data[7].toLowerCase()}` : undefined;
+  const facing = data[7] !== "" ? `facing=${data[7].toLowerCase()}` : undefined;
   const waterlogged = (() => {
     switch (data[8]) {
       case "0":
@@ -33,7 +33,7 @@ const mkBlock = (data: LootAssetContainers): [pos: Vector3D, blockId: string] =>
         return undefined;
     }
   })();
-  const chestType = data[9] !== "null" ? `type=${data[9].toLowerCase()}` : undefined;
+  const chestType = data[9] !== "" ? `type=${data[9].toLowerCase()}` : undefined;
   const block = `"${data[6]}[${[facing, waterlogged, chestType].filter(v => v).join(",")}]"`;
   return [pos, block];
 };
@@ -78,7 +78,7 @@ export async function genContainerRegistry(inputPath: string, outputPath: string
           chestData.push({ id, pos, block, items: processedItems });
           break;
         case "random":
-          const lootTable = asset[4] !== "null" ? asset[4] : undefined;
+          const lootTable = asset[4] !== "" ? asset[4] : undefined;
           chestData.push({ id, pos, block, lootTable });
           break;
       }
@@ -115,13 +115,13 @@ export async function genContainerRegistry(inputPath: string, outputPath: string
           chestData.push({ id: id2, pos: pos2, block: block2, items: items2 });
           break;
         case "random":
-          const lootTable = asset[4] !== "null" ? asset[4] : "empty";
+          const lootTable = asset[4] !== "" ? asset[4] : "empty";
           chestData.push({ id: id1, pos: pos1, block: block1, lootTable });
           chestData.push({ id: id2, pos: pos2, block: block2, lootTable });
           break;
       }
     } else {
-      throw new Error(`Invalid asset containers count: ${assetContainers.length}`);
+      throw new Error(`Invalid asset containers count: ${assetContainers.length} (id: ${asset[0]})`);
     }
 
     for (const { id, pos, block, lootTable, items } of chestData) {
